@@ -15,7 +15,6 @@
 #include <zygisk.hpp>
 
 #include "ipc_bridge.h"
-#include "trace_marker_fds.h"
 
 namespace vector::native::module {
 
@@ -253,17 +252,6 @@ void VectorModule::preAppSpecialize(zygisk::AppSpecializeArgs *args) {
     // Reset state for this new process fork.
     should_inject_ = false;
     is_manager_app_ = false;
-
-    // The loader may already have opened trace_marker while loading our module.
-    // JNI initialization below can do so as well. Preserve these cached FDs before
-    // the loader closes descriptors created during pre-specialization, on every exit.
-    const TraceMarkerFdGuard preserve_trace_markers(
-        [this](int fd) {
-            const bool preserved = api_ && api_->exemptFd(fd);
-            if (!preserved) LOGW("Could not exempt trace_marker FD {} from loader cleanup.", fd);
-            return preserved;
-        },
-        [] { LOGW("Trace-marker FD preservation was incomplete before specialization."); });
 
     // --- Manager App Special Handling ---
     // We identify our manager app by a special UID and

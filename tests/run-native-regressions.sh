@@ -9,6 +9,3 @@ flags=(-std=c++20 -O1 -g -Wall -Wextra -Werror -fsanitize=address,undefined -fno
     -I"$repo/tests/native/include" -I"$repo/native/include" -I"$repo/external/fmt/include" \
     "$repo/tests/native/logging_test.cpp" -o "$test_dir/logging_test"
 "$test_dir/logging_test"
-"$compiler" "${flags[@]}" -I"$repo/zygisk/src/main/cpp/include" \
-    "$repo/tests/native/trace_marker_fds_test.cpp" -o "$test_dir/trace_marker_fds_test"
-"$test_dir/trace_marker_fds_test"
