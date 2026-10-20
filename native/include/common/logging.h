@@ -71,7 +71,7 @@ inline void LogToAndroid(int prio, const char *tag, fmt::format_string<T...> fmt
     std::array<char, 1024> buf{};
     // format_to_n is safe against buffer overflows.
     auto result = fmt::format_to_n(buf.data(), buf.size() - 1, fmt, std::forward<T>(args)...);
-    buf[result.size] = '\0';
+    *result.out = '\0';  // result.size includes characters truncated by format_to_n.
     __android_log_write(prio, tag, buf.data());
 }
 }  // namespace vector::native::detail
