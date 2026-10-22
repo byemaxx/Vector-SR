@@ -1,0 +1,64 @@
+name: One-time Vector-SR artifact cleanup
+
+on:
+  push:
+    branches:
+      - maintenance/prune-artifacts-20261022
+    paths:
+      - .github/workflows/prune-old-artifacts-once.yml
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: vector-sr-artifact-cleanup-once
+  cancel-in-progress: false
+
+jobs:
+  clean:
+    if: github.repository == 'byemaxx/Vector-SR' && github.event.head_commit.message == 'maintenance: prune old Vector-SR artifacts once'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Delete old build artifacts and preserve last three successful builds
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = 'byemaxx';
+            const repo = 'Vector-SR';
+            if (context.repo.owner !== owner || context.repo.repo !== repo) throw new Error('Repository guard failed');
+            const keepRuns = new Set([39451022503, 39448823919, 39445305805]);
+            const names = /^(?:Vector-SR-v.+-(?:Debug|Release)|mappings)$/;
+            const artifacts = await github.paginate(github.rest.actions.listArtifactsForRepo, {owner, repo, per_page: 100});
+            const keep = [];
+            const targets = [];
+            const untouched = [];
+            for (const a of artifacts) {
+              const run = a.workflow_run?.id;
+              if (a.expired || !run || !names.test(a.name)) {untouched.push(a); continue;}
+              if (keepRuns.has(run)) {keep.push(a); continue;}
+              targets.push(a);
+            }
+            const bytes = items => items.reduce((n, a) => n + (a.size_in_bytes || 0), 0);
+            core.info(`Found ${artifacts.length} artifacts; preserving ${keep.length} from the three selected successful builds, deleting ${targets.length} old Vector-SR build artifacts (${(bytes(targets) / 1e6).toFixed(1)} MB).`);
+            if (keep.length !== 9) throw new Error(`Preservation safety check failed: expected 9 artifacts in three successful runs; got ${keep.length}. No deletions performed.`);
+            if (targets.length > 500) throw new Error('Unexpectedly many artifacts; no deletions performed.');
+            const errors = [];
+            let deletedBytes = 0;
+            let deletedCount = 0;
+            for (const a of targets) {
+              try {
+                await github.rest.actions.deleteArtifact({owner, repo, artifact_id: a.id});
+                deletedCount++; deletedBytes += a.size_in_bytes || 0;
+              } catch (error) {
+                core.warning(`Failed to delete artifact id=${a.id} name=${a.name}: ${error.message}`);
+                errors.push(a.id);
+              }
+              await new Promise(resolve => setTimeout(resolve, 400));
+            }
+            await core.summary
+              .addHeading('Vector-SR old artifact cleanup')
+              .addRaw(`Preserved build runs: ${[...keepRuns].join(', ')}.<br>Preserved: ${keep.length} artifacts (${(bytes(keep)/1e6).toFixed(1)} MB).<br>Deleted: ${deletedCount} artifacts (${(deletedBytes/1e6).toFixed(1)} MB).<br>Failed: ${errors.length}.<br>Unrelated or unknown artifacts not touched: ${untouched.length}.`)
+              .write();
+            if (errors.length) core.setFailed(`Some old artifacts could not be deleted: ${errors.join(', ')}`);
