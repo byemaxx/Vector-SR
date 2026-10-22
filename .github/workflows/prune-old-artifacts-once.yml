@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   clean:
-    if: github.repository == 'byemaxx/Vector-SR' && github.event.head_commit.message == 'maintenance: prune old Vector-SR artifacts once'
+    if: github.repository == 'byemaxx/Vector-SR'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
