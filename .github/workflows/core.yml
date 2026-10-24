@@ -31,6 +31,9 @@ jobs:
       - name: Native regression tests
         run: bash tests/run-native-regressions.sh
 
+      - name: Daemon startup regression tests
+        run: bash tests/run-daemon-regressions.sh
+
       - name: Write key
         if: ${{ ( github.event_name != 'pull_request' && github.ref == 'refs/heads/master' ) || github.ref_type == 'tag' }}
         run: |

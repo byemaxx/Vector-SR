@@ -25,9 +25,12 @@ if [ "$debug" = "true" ]; then
   fi
 fi
 
-# Mount an empty temporary file system over /data/resource-cache to avoid possible overlay conflicts.
+# Keep daemon idmap writes isolated from Zygote without allocating a tmpfs superblock.
 # Note that this script runs inside an isolated mount namespace (via unshare).
-mount tmpfs -t tmpfs /data/resource-cache
+emptyDir="$dir/.resource-cache"
+rm -rf "$emptyDir" || exit 1
+mkdir -p "$emptyDir" || exit 1
+mount -o bind "$emptyDir" /data/resource-cache || exit 1
 
 # Wait for Zygote socket using a polling loop
 if [ ! -S "/dev/socket/zygote" ]; then
