@@ -23,6 +23,11 @@ Adaptation: <why a direct cherry-pick was not used>
 
 ## Current backport map
 
+### 2026-10-24 update
+
+- `82112f99ae5b9aa66940e35bfc27c813a6673bc7`: adapted resource-cache isolation from tmpfs to a freshly recreated private bind source. Vector-SR additionally stops startup if cleanup, directory creation or mounting fails. The existing private mount namespace and SR recovery remain unchanged.
+- `ddeed8ca1ffedfaba7f4341b911089906862d5c4`: completed the LSPlant portion by advancing `49d2e564` to `7a768e31ffb2852797631b5140b54f9702a78743`, including its dex_builder pin. This brings native-hook signature, Android 17 JNI-ID, CloseGuard and Knox compatibility fixes. The trampoline workaround was already present under the old commit hash. libxposed mirror/docs and LSPlt updates were already ported; unrelated dependency and toolchain upgrades remain excluded.
+
 | Upstream commit | Vector-SR status | Notes |
 | --- | --- | --- |
 | `077131dba53b2be6d4962c3527fcf4f57ebe1241` | Ported | Android 15/16 SystemUI notification-flag workaround. |
